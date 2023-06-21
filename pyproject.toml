@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "pytest"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pylure"
+version = "0.0.1"
+dependencies = [
+    "click",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["data"]
+
+[project.scripts]
+room-info = "pylure.room_info:main"
+
+[tool.pytest.ini_options]
+minversion = "7.0"

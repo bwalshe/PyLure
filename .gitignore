@@ -1,2 +1,6 @@
 venv
-lure.dat
+.idea
+.tox
+.dist
+*.egg-info
+__pycache__
