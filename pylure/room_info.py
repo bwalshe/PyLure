@@ -1,7 +1,7 @@
 from pathlib import Path
 import click
 
-from pylure.resource import LureFileResourceLoader, file_for_id
+from pylure.resource import LureGameResourceManager, file_for_id
 from pylure.room import RoomResource, read_room_resources, ROOM_DATA_RESOURCE_ID
 
 
@@ -12,10 +12,8 @@ def print_summary(room: RoomResource) -> None:
 
 
 def print_info(root: Path) -> None:
-    data_path = root / file_for_id(ROOM_DATA_RESOURCE_ID)
-    with data_path.open("rb") as data:
-        loader = LureFileResourceLoader(data)
-        room_data = loader[ROOM_DATA_RESOURCE_ID]
+    with LureGameResourceManager(root) as manager:
+        room_data = manager[ROOM_DATA_RESOURCE_ID]
         print("Room\tNum\tLayer\tFile\tData Files")
         print("Number\tLayers\tId\tUsed")
         for room in read_room_resources(room_data):
