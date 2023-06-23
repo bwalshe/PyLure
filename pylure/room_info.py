@@ -6,7 +6,7 @@ from pylure.room import RoomResource, read_room_resources, ROOM_DATA_RESOURCE_ID
 
 
 def print_summary(room: RoomResource) -> None:
-    files_used = set(file_for_id(l) for l in room.layers if l != 0)
+    files_used = set(file_for_id(layer) for layer in room.layers if layer != 0)
     print(room.room_number, room.num_layers,
           list(room.layers), files_used, sep='\t')
 
@@ -14,7 +14,7 @@ def print_summary(room: RoomResource) -> None:
 def print_info(root: Path) -> None:
     with LureGameResourceManager(root) as manager:
         room_data = manager[ROOM_DATA_RESOURCE_ID]
-        print("Room\tNum\tLayer\tFile\tData Files")
+        print("Room\tNum\tLayer\tData Files")
         print("Number\tLayers\tId\tUsed")
         for room in read_room_resources(room_data):
             print_summary(room)

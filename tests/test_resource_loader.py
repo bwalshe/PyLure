@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 
 from pylure.resource import (
     LureFileResourceLoader,
@@ -10,8 +9,8 @@ from pylure.resource import (
 )
 
 
-def test_lure_file_resource_loader():
-    with open("data/lure.dat", "rb") as data_file:
+def test_lure_file_resource_loader(pytestconfig):
+    with (pytestconfig.rootpath / "data" / "lure.dat").open("rb") as data_file:
         offset = find_language_offset(data_file)
         header = LureFileResourceLoader(data_file, 0, offset)
         assert len(header) > 0
@@ -25,10 +24,11 @@ def test_lure_file_resource_loader():
             _ = header[-1]
 
 
-def test_lure_game_resource_manager():
-    with LureGameResourceManager(Path("data")) as manager:
+def test_lure_game_resource_manager(pytestconfig):
+    with LureGameResourceManager(pytestconfig.rootpath / "data") as manager:
         keys = list(manager.keys())
-        assert len(keys) > 0
+        assert len(keys) > 100
+        assert len(keys) == len(set(keys))
         assert len(manager[keys[0]]) > 0
         assert len(manager[keys[-1]]) > 0
         assert set(file_for_id(k) for k in keys) == set(LURE_FILES)

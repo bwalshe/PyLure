@@ -2,7 +2,8 @@ import ctypes
 import struct
 from functools import cache
 from pathlib import Path
-from typing import BinaryIO, ByteString, Iterator
+from typing import BinaryIO, ByteString
+from collections.abc import KeysView, Iterator
 from itertools import chain
 
 ENG_LANG_CODE = 3
@@ -67,13 +68,13 @@ class LureFileResourceLoader:
         resource_size = entry.size + (0x1000 if entry.size_extension else 0)
         return self._data.read(resource_size)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._entries)
 
-    def __contains__(self, item):
+    def __contains__(self, item) -> bool:
         return item in self._entries
 
-    def keys(self):
+    def keys(self) -> KeysView[int]:
         return self._entries.keys()
 
 
@@ -108,7 +109,7 @@ class LureGameResourceManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         if not self._data_files:
             return
         close_exceptions = []
@@ -126,7 +127,7 @@ class LureGameResourceManager:
             raise ExceptionGroup("Failed to close one or more resource files.",
                                  close_exceptions)
 
-    def __getitem__(self, ref_id: int):
+    def __getitem__(self, ref_id: int) -> ByteString:
         if self._loaders is None:
             raise ValueError("Game resource files are not currently open")
         file_no = _file_no_for_id(ref_id)
