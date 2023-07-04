@@ -47,7 +47,8 @@ def read_room_resources(room_data: ByteString) -> Iterator[RoomResource]:
 def read_palette(raw_palette: ByteString) -> List[Tuple[int, int, int]]:
     if len(raw_palette) % 3 != 0:
         raise RuntimeError("This resource does not appear to be a pallet.")
-    return [tuple(raw_palette[i * 3:(i + 1) * 3]) for i in range(len(raw_palette) // 3)]
+    shift_palette = [(x << 2) + (x >> 4) for x in raw_palette]
+    return [tuple(shift_palette[i * 3:(i + 1) * 3]) for i in range(len(shift_palette) // 3)]
 
 
 def room_palette_id(room_id: int) -> int:
@@ -117,7 +118,7 @@ class PixelDecoder:
                     else:
                         self._decr_ctr()
                         if self._shl_carry():
-                            self._al = self._compressed_data[self._bp + 3]
+                            self._al = self._compressed_data[self._bp + 2]
                         else:
                             self._al = self._compressed_data[self._bp + 1]
                 else:
