@@ -1,8 +1,9 @@
 import ctypes
 import struct
-from typing import ByteString, Iterator
+from typing import ByteString, Iterator, List, Tuple
 
 ROOM_DATA_RESOURCE_ID = 0x3f05
+SCREEN_WIDTH = 320
 
 
 class RoomRect(ctypes.LittleEndianStructure):
@@ -41,6 +42,16 @@ def read_room_resources(room_data: ByteString) -> Iterator[RoomResource]:
         if offset == 0xFFFF:
             return
         yield RoomResource.from_buffer_copy(room_data, offset)
+
+
+def read_palette(raw_palette: ByteString) -> List[Tuple[int, int, int]]:
+    if len(raw_palette) % 3 != 0:
+        raise RuntimeError("This resource does not appear to be a pallet.")
+    return [tuple(raw_palette[i * 3:(i + 1) * 3]) for i in range(len(raw_palette) // 3)]
+
+
+def room_palette_id(room_id: int) -> int:
+    return (room_id & 0xffe0) - 1
 
 
 class PixelDecoder:
