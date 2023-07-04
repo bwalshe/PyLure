@@ -22,13 +22,13 @@ def main():
         img.set_palette(pallet)
         img = pygame.transform.scale(img, window_size)
 
+        screen.blit(img, img.get_rect())
+        pygame.display.flip()
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
-
-            screen.blit(img, img.get_rect())
-            pygame.display.flip()
 
 
 if __name__ == "__main__":
