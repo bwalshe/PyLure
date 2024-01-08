@@ -55,91 +55,63 @@ def room_palette_id(room_id: int) -> int:
     return (room_id & 0xffe0) - 1
 
 
-class PixelDecoder:
+class BitIterator:
+    def __init__(self, byte_data: ByteString):
+        self._bytes = (b for b in byte_data)
+        self._pos = 9
+        self._current = next(self._bytes)
 
-    def __init__(self):
-        self._compressed_data = None
-        self._data_pos_1 = None
-        self._data_pos_2 = None
-        self._output = b''
-        self._ch = None
-        self._cl = None
-        self._ah = None
-        self._al = None
-        self._bp = None
-
-    def _esbx(self):
-        result = self._compressed_data[self._data_pos_2]
-        self._data_pos_2 += 1
+    def __next__(self) -> bool:
+        self._pos -= 1
+        if self._pos == 0:
+            self._current = next(self._bytes)
+            self._pos = 8
+        result = (self._current & 0x80) != 0
+        self._current <<= 1
         return result
 
-    def _dssi(self):
-        result = 0 if self._data_pos_1 == len(self._compressed_data) \
-            else self._compressed_data[self._data_pos_1]
-        self._data_pos_1 += 1
-        return result
 
-    def _decr_ctr(self):
-        self._cl -= 1
-        if self._cl == 0:
-            self._ch = self._esbx()
-            self._cl = 8
+def decode_layer_pixels(compressed_data: ByteString) -> ByteString:
+    dssi_start = struct.unpack("<I", compressed_data[0x400:0x404])[0]
+    dssi = (b for b in compressed_data[dssi_start:])
+    code_bits = BitIterator(compressed_data[0x404:])
+    output = b''
 
-    def _shl_carry(self):
-        result = (self._ch & 0x80) != 0
-        self._ch <<= 1
-        return result
+    loop_flag = True
+    while loop_flag:
+        al = next(dssi)
+        output += bytes([al])
+        bp = al << 2
 
-    def decode_layer_pixels(self, compressed_data: ByteString) -> ByteString:
-        if self._compressed_data is not None:
-            raise RuntimeError("decode_layer_pixels may only be invoked once")
-        self._compressed_data = compressed_data
-        self._data_pos_1 = struct.unpack("<I", compressed_data[0x400:0x404])[0]
-        self._data_pos_2 = 0x404
-
-        self._ch = self._esbx()
-        self._cl = 9
-        loop_flag = True
-        while loop_flag:
-            self._al = self._dssi()
-            self._output += bytes([self._al])
-            self._bp = self._al << 2
-
-            while True:
-                self._decr_ctr()
-                if self._shl_carry():
-                    self._decr_ctr()
-                    if self._shl_carry():
-                        self._decr_ctr()
-                        if self._shl_carry():
-                            break
-
-                        self._al = self._compressed_data[self._bp + 3]
-                    else:
-                        self._decr_ctr()
-                        if self._shl_carry():
-                            self._al = self._compressed_data[self._bp + 2]
-                        else:
-                            self._al = self._compressed_data[self._bp + 1]
+        while True:
+            if next(code_bits):
+                if next(code_bits):
+                    if next(code_bits):
+                        break
+                    al = compressed_data[bp + 3]
                 else:
-                    self._decr_ctr()
-                    if self._shl_carry():
-                        self._al = self._bp >> 2
-                        self._ah = self._dssi()
-                        if self._ah == 0:
-                            self._al = self._dssi()
-                            if self._al == 0:
-                                loop_flag = False
-                                break
-                            else:
-                                continue
+                    if next(code_bits):
+                        al = compressed_data[bp + 2]
+                    else:
+                        al = compressed_data[bp + 1]
+            else:
+                if next(code_bits):
+                    al = bp >> 2
+                    ah = next(dssi)
+                    if ah == 0:
+                        al = next(dssi)
+                        if al == 0:
+                            loop_flag = False
+                            break
                         else:
-                            self._output += bytes([self._al] * self._ah)
                             continue
                     else:
-                        self._al = self._compressed_data[self._bp]
+                        output += bytes([al] * ah)
+                        continue
+                else:
+                    al = compressed_data[bp]
 
-                self._output += bytes([self._al])
-                self._bp = self._al << 2
+            output += bytes([al])
+            bp = al << 2
 
-        return self._output
+    return output

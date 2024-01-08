@@ -15,8 +15,7 @@ def main():
         rooms = list(read_room_resources(room_bytes))
         layer_id = rooms[0].layers[0]
         pallet_id = room_palette_id(layer_id)
-        decoder = PixelDecoder()
-        layer_pixels = decoder.decode_layer_pixels(manager[layer_id])
+        layer_pixels = decode_layer_pixels(manager[layer_id])
         pallet = read_palette(manager[pallet_id])
         img = pygame.image.frombuffer(bytearray(layer_pixels), (SCREEN_WIDTH, len(layer_pixels) // SCREEN_WIDTH), "P")
         img.set_palette(pallet)
